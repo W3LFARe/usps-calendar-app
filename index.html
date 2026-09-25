@@ -2,51 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NALC Branch 529</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NALC Branch 529 Calendar</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="title-row">
-  <span id="year-display"></span>
-  <h1>NALC Branch 529</h1>
-</div>
+  <!-- Print Header (Hidden on screen, visible in print) -->
+  <div class="print-header">
+    <h1 id="print-title">2026 NALC Branch 529</h1>
+    <h2>Color-coded Days-off Calendar</h2>
+  </div>
 
+  <!-- Screen UI (Hidden in print) -->
+  <div class="title-row no-print">
+    <span id="year-display"></span>
+    <h1>NALC Branch 529</h1>
+  </div>
 
-  <label for="year-select">Year:</label>
-  <select id="year-select"></select>
+  <label for="year-select" class="no-print">Year:</label>
+  <select id="year-select" class="no-print" aria-label="Select calendar year"></select>
 
+  <!-- Calendar Grid (Contains ONLY the 12 months) -->
   <div id="calendar-grid" class="calendar-grid"></div>
 
+  <!-- Print Footer (Hidden on screen, visible in print) -->
+  <div class="print-footer">
+    Paydays are indicated by a "P". Dates in gray boxes indicate postal holidays.
+  </div>
+
   <script type="module">
-  import { populateYearDropdown, renderCalendar } from "./calendar.js";
+    import { populateYearDropdown, renderCalendar } from "./calendar.js";
 
-  const selectEl = document.getElementById("year-select");
-  const now = new Date();
-  const defaultYear = Math.min(Math.max(now.getFullYear(), 2025), 2050);
-  const yearDisplay = document.getElementById("year-display");
-yearDisplay.textContent = defaultYear;
+    const selectEl = document.getElementById("year-select");
+    const yearDisplay = document.getElementById("year-display");
+    const printTitle = document.getElementById("print-title");
+    
+    const now = new Date();
+    const defaultYear = Math.min(Math.max(now.getFullYear(), 2025), 2050);
 
-selectEl.addEventListener("change", () => {
-  const year = +selectEl.value;
-  renderCalendar(year);
-  document.title = `USPS Calendar – ${year}`;
-  yearDisplay.textContent = year;
-});
+    yearDisplay.textContent = defaultYear;
+    printTitle.textContent = `${defaultYear} NALC Branch 529`;
+    document.title = `USPS Calendar – ${defaultYear}`;
 
+    selectEl.addEventListener("change", () => {
+      const year = +selectEl.value;
+      renderCalendar(year);
+      document.title = `USPS Calendar – ${year}`;
+      yearDisplay.textContent = year;
+      printTitle.textContent = `${year} NALC Branch 529`;
+    });
 
-  populateYearDropdown(selectEl, defaultYear);
-  renderCalendar(defaultYear);
-
-  // Set initial title
-  document.title = `USPS Calendar – ${defaultYear}`;
-
-  selectEl.addEventListener("change", () => {
-    const year = +selectEl.value;
-    renderCalendar(year);
-    document.title = `USPS Calendar – ${year}`;
-    if (printYearDisplay) printYearDisplay.textContent = year;
-  });
-</script>
-
+    populateYearDropdown(selectEl, defaultYear);
+    renderCalendar(defaultYear);
+  </script>
 </body>
 </html>
