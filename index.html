@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NALC Branch 529</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="title-row">
+  <span id="year-display"></span>
+  <h1>NALC Branch 529</h1>
+</div>
+
+
+  <label for="year-select">Year:</label>
+  <select id="year-select"></select>
+
+  <div id="calendar-grid" class="calendar-grid"></div>
+
+  <script type="module">
+  import { populateYearDropdown, renderCalendar } from "./calendar.js";
+
+  const selectEl = document.getElementById("year-select");
+  const now = new Date();
+  const defaultYear = Math.min(Math.max(now.getFullYear(), 2025), 2050);
+  const yearDisplay = document.getElementById("year-display");
+yearDisplay.textContent = defaultYear;
+
+selectEl.addEventListener("change", () => {
+  const year = +selectEl.value;
+  renderCalendar(year);
+  document.title = `USPS Calendar – ${year}`;
+  yearDisplay.textContent = year;
+});
+
+
+  populateYearDropdown(selectEl, defaultYear);
+  renderCalendar(defaultYear);
+
+  // Set initial title
+  document.title = `USPS Calendar – ${defaultYear}`;
+
+  selectEl.addEventListener("change", () => {
+    const year = +selectEl.value;
+    renderCalendar(year);
+    document.title = `USPS Calendar – ${year}`;
+    if (printYearDisplay) printYearDisplay.textContent = year;
+  });
+</script>
+
+</body>
+</html>
