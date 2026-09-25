@@ -17,9 +17,8 @@ export function populateYearDropdown(selectElement, defaultYear) {
 // 0: Blue, 1: Orange, 2: Green, 3: Purple, 4: Black, 5: Red
 const colors = ["blue", "orange", "green", "purple", "black", "red"];
 
-// COLOR ANCHOR: Monday, January 4, 2027 is BLUE.
-// This ensures Jan 1, 2027 (Friday) is RED, and the pattern flows correctly.
-const anchorDate = new Date(2027, 0, 4, 12, 0, 0); 
+// COLOR ANCHOR: Monday, January 4, 2027 is BLUE (Index 0).
+const anchorDate = new Date(2027, 0, 4, 12, 0, 0);
 const anchorIndex = 0; // Blue
 
 const rotationCache = new Map();
@@ -38,7 +37,6 @@ function getColorClass(date) {
   }
 
   // 3. Monday - Friday: Calculate based on the week number
-  // Create a clean date at noon to avoid timezone shifts
   const cleanDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
   const key = cleanDate.getTime();
   
@@ -49,11 +47,11 @@ function getColorClass(date) {
   currentMonday.setDate(cleanDate.getDate() - cleanDate.getDay() + 1);
 
   // Calculate difference in weeks between current Monday and Anchor Monday
-  const msPerWeek = 604800000; // 1000 * 60 * 60 * 24 * 7
+  const msPerWeek = 604800000;
   const weeksDiff = Math.round((currentMonday - anchorDate) / msPerWeek);
 
-  // Determine the color index for this Monday
-  let weekColorIndex = (anchorIndex + weeksDiff) % colors.length;
+  // ✅ FIXED: Monday's color steps BACK one slot per week (only 5 workdays advance per week)
+  let weekColorIndex = (anchorIndex - weeksDiff) % colors.length;
   if (weekColorIndex < 0) weekColorIndex += colors.length;
 
   // Determine the color for the specific day (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
@@ -66,8 +64,7 @@ function getColorClass(date) {
 }
 
 // Calculate USPS Paydays (Bi-weekly on Fridays)
-// PAYDAY ANCHOR: January 15, 2027 is a Payday. 
-// This aligns with the 2027 PDF and calculates backwards to Jan 2, 2026 for the 2026 PDF.
+// PAYDAY ANCHOR: January 15, 2027 is a Payday (matches 2027 PDF, back-calcs to Jan 2, 2026)
 function getPaydays(year) {
   const paydays = new Set();
   const anchor = new Date(2027, 0, 15, 12, 0, 0); 
