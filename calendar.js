@@ -13,59 +13,64 @@ export function populateYearDropdown(selectElement, defaultYear) {
   selectElement.appendChild(fragment);
 }
 
-// Color array matches the PDF style
-const colors = ["orange", "green", "purple", "black", "red", "blue"];
+// The 6-week rotation cycle starting with Monday = Blue
+// 0: Blue, 1: Orange, 2: Green, 3: Purple, 4: Black, 5: Red
+const colors = ["blue", "orange", "green", "purple", "black", "red"];
 
-// Anchor set to make 2027 the PURPLE schedule
-const anchorDate = new Date(2024, 11, 31); 
-const anchorIndex = colors.indexOf("green"); 
+// COLOR ANCHOR: Monday, January 4, 2027 is BLUE.
+// This ensures Jan 1, 2027 (Friday) is RED, and the pattern flows correctly.
+const anchorDate = new Date(2027, 0, 4, 12, 0, 0); 
+const anchorIndex = 0; // Blue
 
 const rotationCache = new Map();
 
-function getRotationIndex(date) {
-  const key = date.toISOString().slice(0, 10);
-  if (rotationCache.has(key)) return rotationCache.get(key);
-
-  const msPerDay = 86400000;
-  const diffDays = Math.round((date - anchorDate) / msPerDay);
-  let weekdays = 0;
-  const cur = new Date(anchorDate);
-  
-  if (diffDays < 0) {
-    for (let i = 0; i > diffDays; i--) {
-      cur.setDate(cur.getDate() - 1);
-      if (cur.getDay() >= 1 && cur.getDay() <= 5) weekdays--;
-    }
-  } else {
-    for (let i = 0; i < diffDays; i++) {
-      cur.setDate(cur.getDate() + 1);
-      if (cur.getDay() >= 1 && cur.getDay() <= 5) weekdays++;
-    }
-  }
-
-  let idx = (anchorIndex + weekdays) % colors.length;
-  if (idx < 0) idx += colors.length;
-  
-  rotationCache.set(key, idx);
-  return idx;
-}
-
 function getColorClass(date) {
   const d = date.getDay();
+  
+  // 1. Sunday is always gray/off
   if (d === 0) return "sunday";
+  
+  // 2. Saturday always matches Friday
   if (d === 6) {
     const fri = new Date(date);
     fri.setDate(fri.getDate() - 1);
-    return colors[getRotationIndex(fri)];
+    return getColorClass(fri);
   }
-  return colors[getRotationIndex(date)];
+
+  // 3. Monday - Friday: Calculate based on the week number
+  // Create a clean date at noon to avoid timezone shifts
+  const cleanDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const key = cleanDate.getTime();
+  
+  if (rotationCache.has(key)) return rotationCache.get(key);
+
+  // Find the Monday of the current week
+  const currentMonday = new Date(cleanDate);
+  currentMonday.setDate(cleanDate.getDate() - cleanDate.getDay() + 1);
+
+  // Calculate difference in weeks between current Monday and Anchor Monday
+  const msPerWeek = 604800000; // 1000 * 60 * 60 * 24 * 7
+  const weeksDiff = Math.round((currentMonday - anchorDate) / msPerWeek);
+
+  // Determine the color index for this Monday
+  let weekColorIndex = (anchorIndex + weeksDiff) % colors.length;
+  if (weekColorIndex < 0) weekColorIndex += colors.length;
+
+  // Determine the color for the specific day (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+  const dayOffset = d - 1; 
+  const finalColorIndex = (weekColorIndex + dayOffset) % colors.length;
+  const color = colors[finalColorIndex];
+
+  rotationCache.set(key, color);
+  return color;
 }
 
 // Calculate USPS Paydays (Bi-weekly on Fridays)
+// PAYDAY ANCHOR: January 15, 2027 is a Payday. 
+// This aligns with the 2027 PDF and calculates backwards to Jan 2, 2026 for the 2026 PDF.
 function getPaydays(year) {
   const paydays = new Set();
-  // Anchor: Jan 15, 2027 is a known USPS payday (Friday)
-  const anchor = new Date(2027, 0, 15);
+  const anchor = new Date(2027, 0, 15, 12, 0, 0); 
   const msPerDay = 86400000;
   const msPerPayPeriod = 14 * msPerDay;
 
@@ -94,7 +99,6 @@ export function renderCalendar(selectedYear) {
   const uspsHolidays = getUSPSHolidays(selectedYear);
   const paydays = getPaydays(selectedYear);
   
-  // Clear grid completely
   grid.innerHTML = "";
 
   const weekdayHeader = `<div class="weekdays">${
@@ -106,7 +110,6 @@ export function renderCalendar(selectedYear) {
   const todayMonth = today.getMonth();
   const todayYear = today.getFullYear();
 
-  // Render ONLY the 12 months into the grid
   for (let month = 0; month < 12; month++) {
     const md = document.createElement("div");
     md.className = "month";
